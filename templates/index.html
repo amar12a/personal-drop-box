@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Management</title>
+</head>
+<body>
+    <h1>File Management</h1>
+
+    <!-- Form for uploading files -->
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <button type="button" onclick="uploadFile()">Upload</button>
+    </form>
+
+    <!-- Displayed file list -->
+    <h2>Uploaded Files</h2>
+    <ul id="fileList"></ul>
+
+    <div id="uploadMessage"></div>
+
+    <script>
+        // Function to fetch and display uploaded files
+        function fetchAndDisplayFiles() {
+            console.log('Fresh files are');
+            fetch('http://127.0.0.1:5000/files') // Replace with the actual API endpoint
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update the HTML to display the list of files
+                    const fileListElement = document.getElementById('fileList');
+                    fileListElement.innerHTML = ''; // Clear previous entries
+
+                    // Access the "files" array in the API response
+                    const files = data.files;
+
+                    // Create list items for each file
+                    files.forEach(file => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `Filename: ${file.filename}, Created At: ${file.created_at}
+                                             <button type="button" onclick="deleteFile(${file.id})">Delete</button>`;
+                        fileListElement.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error fetching files:', error));
+        }
+
+        // Function to upload file
+        function uploadFile() {
+            const form = document.getElementById('uploadForm');
+            const formData = new FormData(form);
+
+            fetch('http://127.0.0.1:5000/files/upload', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const uploadMessage = document.getElementById('uploadMessage');
+                uploadMessage.textContent = `File uploaded successfully`;
+                fetchAndDisplayFiles(); // Refresh the file list
+            })
+            .catch(error => console.error('Error uploading file:', error));
+        }
+
+        // Function to delete file
+        // Function to delete file
+        function deleteFile(fileId) {
+            fetch(`http://127.0.0.1:5000/files/${fileId}`, {
+                method: 'DELETE',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const uploadMessage = document.getElementById('uploadMessage');
+                uploadMessage.textContent = `File deleted successfully`;
+                console.log('File deleted successfully');
+                // Refresh the file list after successful deletion
+                fetchAndDisplayFiles();
+            })
+            .catch(error => console.error('Error deleting file:', error));
+        }
+
+
+        // Call fetchAndDisplayFiles() when the page loads
+        window.onload = fetchAndDisplayFiles;
+    </script>
+</body>
+</html>
